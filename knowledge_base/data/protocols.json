@@ -1,0 +1,181 @@
+[
+  {
+    "id": "PROTO-CYB-001",
+    "title": "Ransomware Incident Response Protocol",
+    "category": "CYBER_ATTACK",
+    "applies_to": ["Ransomware", "Malware", "Data Extortion"],
+    "steps": [
+      "Detect and confirm: validate ransom notes, encryption activity and scope via EDR telemetry",
+      "Contain: isolate infected hosts and segments, disable remote access, block C2 indicators",
+      "Preserve evidence: capture memory and disk images before wiping",
+      "Assess: identify initial access vector, exfiltration and backup integrity",
+      "Eradicate: remove persistence, reset all privileged credentials, rebuild identity infrastructure if compromised",
+      "Recover: restore from clean immutable backups in business-priority order and monitor for reinfection",
+      "Notify: law enforcement, regulators and affected individuals per legal requirements"
+    ],
+    "key_contacts": ["CISO", "Incident response retainer", "Legal counsel", "Law enforcement cyber unit", "Cyber insurer"],
+    "notes": "Do not pay ransom without executive, legal and law-enforcement consultation. Sanctions screening is mandatory before any payment."
+  },
+  {
+    "id": "PROTO-CYB-002",
+    "title": "DDoS Mitigation Protocol",
+    "category": "CYBER_ATTACK",
+    "applies_to": ["Distributed Denial of Service", "Service Disruption"],
+    "steps": [
+      "Confirm attack via traffic baselines and distinguish from legitimate surge",
+      "Activate upstream ISP or cloud scrubbing and CDN protection",
+      "Apply rate limiting, geo-blocking and WAF rules to application endpoints",
+      "Fail over public communications to alternate channels (social media, radio, SMS)",
+      "Monitor for multi-vector or smokescreen attacks masking intrusion",
+      "Report to national CERT and capture traffic samples for attribution"
+    ],
+    "key_contacts": ["Network operations center", "ISP security desk", "CDN provider", "Communications officer"],
+    "notes": "Public safety information channels require always-on DDoS protection."
+  },
+  {
+    "id": "PROTO-CYB-003",
+    "title": "Data Breach and Notification Protocol",
+    "category": "CYBER_ATTACK",
+    "applies_to": ["Data Breach", "Unauthorized Access", "Insider Threat", "Supply Chain Attack"],
+    "steps": [
+      "Stop ongoing exfiltration: disable vulnerable services and compromised accounts",
+      "Scope affected data types, records and jurisdictions",
+      "Engage forensics and preserve logs under legal privilege",
+      "Notify regulators within statutory deadlines (e.g. 72 hours under GDPR)",
+      "Notify affected individuals with clear guidance and support services",
+      "Remediate root cause and verify with independent testing"
+    ],
+    "key_contacts": ["Data protection officer", "Legal counsel", "Forensics provider", "Customer support lead"],
+    "notes": "Track regulatory clocks from the moment of awareness, not confirmation."
+  },
+  {
+    "id": "PROTO-OT-001",
+    "title": "Industrial Control System (OT) Intrusion Protocol",
+    "category": "CYBER_ATTACK",
+    "applies_to": ["Industrial Control System Intrusion", "SCADA Compromise"],
+    "steps": [
+      "Prioritize physical safety: move affected processes to manual or safe state",
+      "Sever IT/OT connectivity and disable all remote access paths",
+      "Verify process values with independent field measurements",
+      "Increase quality and safety sampling of physical outputs",
+      "Engage OT-specialized incident response and notify sector regulator and CISA",
+      "Restore only after validating controller logic and firmware integrity"
+    ],
+    "key_contacts": ["Plant operations manager", "OT security lead", "Sector regulator", "CISA"],
+    "notes": "Safety overrides cyber containment: never shut down safety instrumented systems."
+  },
+  {
+    "id": "PROTO-NAT-001",
+    "title": "Flood Emergency Response Protocol",
+    "category": "NATURAL_DISASTER",
+    "applies_to": ["Riverine Flood", "Flash Flood", "Storm Surge", "Hurricane"],
+    "steps": [
+      "Monitor river gauges and forecasts; activate EOC at flood watch",
+      "Issue zone-based evacuation orders early and close low-water crossings",
+      "Protect critical facilities with temporary barriers and generators",
+      "Open shelters with accessible transport and pet accommodation",
+      "Conduct swift-water rescue with pre-staged boats and high-water vehicles",
+      "Issue public health advisories for water safety and contamination",
+      "Document damage for disaster declaration and recovery funding"
+    ],
+    "key_contacts": ["Emergency management director", "National Weather Service", "Public works", "Red Cross", "National Guard"],
+    "notes": "Most flood deaths occur in vehicles; road closure enforcement is life-saving."
+  },
+  {
+    "id": "PROTO-NAT-002",
+    "title": "Earthquake Response Protocol",
+    "category": "NATURAL_DISASTER",
+    "applies_to": ["Earthquake", "Structural Collapse"],
+    "steps": [
+      "Activate EOC and conduct rapid windshield damage assessment",
+      "Deploy urban search and rescue to collapsed structures",
+      "Shut off gas in damaged zones and prioritize fire suppression",
+      "Establish casualty collection points and hospital surge coordination",
+      "Perform structural safety tagging of buildings, bridges and critical facilities",
+      "Restore communications with satellite and mobile cell assets",
+      "Open mass care shelters and family reunification services; prepare for aftershocks"
+    ],
+    "key_contacts": ["Fire chief", "USAR task force", "Gas and electric utilities", "Structural engineers", "Hospital coalition"],
+    "notes": "The first 72 hours are critical for live rescues."
+  },
+  {
+    "id": "PROTO-NAT-003",
+    "title": "Wildfire Evacuation Protocol",
+    "category": "NATURAL_DISASTER",
+    "applies_to": ["Wildfire", "Smoke Event"],
+    "steps": [
+      "Use pre-defined evacuation zones for warnings and orders",
+      "Notify residents via alerts, sirens and door-to-door in fast-moving fires",
+      "Manage evacuation traffic with contraflow and control points",
+      "Coordinate utility power shutoffs in high-risk circuits",
+      "Open evacuation centers with clean air spaces and animal care",
+      "Issue air quality advisories and distribute N95 masks"
+    ],
+    "key_contacts": ["Fire incident commander", "Sheriff", "Electric utility", "Air quality district"],
+    "notes": "Evacuate early; late evacuations in wind-driven fires cause entrapment."
+  },
+  {
+    "id": "PROTO-INF-001",
+    "title": "Critical Infrastructure Outage Protocol (Power, Water, Telecom)",
+    "category": "INFRASTRUCTURE_FAILURE",
+    "applies_to": ["Power Grid Failure", "Water System Contamination", "Telecommunications Outage", "Winter Storm"],
+    "steps": [
+      "Establish outage scope and estimated restoration time with the utility operator",
+      "Protect life-safety facilities first: hospitals, 911 centers, water and wastewater, dialysis",
+      "Deploy generators and fuel logistics for critical facilities",
+      "Open cooling or warming centers and conduct welfare checks on medically dependent residents",
+      "Issue public guidance: boil-water, carbon monoxide safety, alternate 911 numbers as applicable",
+      "Coordinate mutual aid crews and track restoration milestones publicly"
+    ],
+    "key_contacts": ["Utility emergency liaison", "Public health officer", "PSAP director", "Public works"],
+    "notes": "Maintain a registry of critical facilities and medically dependent residents."
+  },
+  {
+    "id": "PROTO-PS-001",
+    "title": "Active Threat and Mass Casualty Protocol",
+    "category": "PUBLIC_SAFETY",
+    "applies_to": ["Active Shooter", "Terrorism", "Mass Casualty Incident", "Crowd Crush"],
+    "steps": [
+      "Neutralize the threat or stop the hazard (contact team, show-stop, halt crowd flow)",
+      "Deploy rescue task forces to treat casualties in warm zones",
+      "Establish unified command, staging, and casualty collection points",
+      "Perform START triage and distribute patients across hospitals",
+      "Secure the scene, preserve evidence and establish a family reunification center",
+      "Communicate through a single joint information center"
+    ],
+    "key_contacts": ["Police incident commander", "EMS medical director", "Hospital coalition", "Public information officer"],
+    "notes": "Stop the killing, stop the dying: time to hemorrhage control determines survival."
+  },
+  {
+    "id": "PROTO-PS-002",
+    "title": "Hazardous Materials Release Protocol",
+    "category": "PUBLIC_SAFETY",
+    "applies_to": ["Hazardous Materials Release", "Chemical Spill", "Toxic Plume"],
+    "steps": [
+      "Identify the substance (placards, shipping papers, CHEMTREC) and consult ERG",
+      "Establish hot, warm and cold zones using plume modeling",
+      "Issue shelter-in-place downwind and evacuate high-risk zones",
+      "Deploy hazmat teams to control the release",
+      "Set up decontamination and alert hospitals of chemical exposures",
+      "Deploy air and water monitoring and publish results before re-entry"
+    ],
+    "key_contacts": ["Hazmat team leader", "Environmental protection agency", "CHEMTREC", "Poison control"],
+    "notes": "Shelter-in-place is often safer than evacuation through a plume."
+  },
+  {
+    "id": "PROTO-PS-003",
+    "title": "Public Health Outbreak Protocol",
+    "category": "PUBLIC_SAFETY",
+    "applies_to": ["Public Health Outbreak", "Foodborne Illness", "Infectious Disease"],
+    "steps": [
+      "Confirm cluster via case definitions and lab testing",
+      "Identify and remove the suspected source",
+      "Conduct epidemiological interviews and contact tracing",
+      "Notify affected populations with symptom and care guidance",
+      "Coordinate recalls with regulators and suppliers",
+      "Monitor for secondary cases until two incubation periods pass"
+    ],
+    "key_contacts": ["Public health officer", "Epidemiologist", "Food safety regulator", "School or facility administrators"],
+    "notes": "Early source removal is the most effective intervention."
+  }
+]

@@ -1,0 +1,515 @@
+[
+  {
+    "id": "INC-2021-001",
+    "title": "Ransomware attack encrypts regional hospital network",
+    "category": "CYBER_ATTACK",
+    "threat_type": "Ransomware",
+    "severity": "CRITICAL",
+    "date": "2021-05-14",
+    "location": "Riverside Regional Medical Center",
+    "description": "At 03:40 staff reported that electronic health record terminals displayed a ransom note. Over 1,200 endpoints and file servers were encrypted by a double-extortion ransomware strain. Radiology, lab systems and e-prescribing went offline and the emergency department diverted ambulances. Attackers claimed to have exfiltrated 400 GB of patient data.",
+    "affected_assets": ["EHR system", "PACS radiology", "Lab information system", "Active Directory"],
+    "people_affected": 85000,
+    "past_response": {
+      "actions": [
+        "Isolated all network segments and disabled VPN and remote access",
+        "Activated downtime procedures with paper charting and ambulance diversion",
+        "Engaged incident response retainer and notified FBI and HHS",
+        "Rebuilt Active Directory from offline backups and reset all privileged credentials",
+        "Restored clinical systems in priority order from immutable backups",
+        "Issued breach notifications to affected patients within 60 days"
+      ],
+      "outcome": "Critical clinical systems restored in 9 days; no ransom paid; ambulance diversion lifted after 36 hours.",
+      "response_time_hours": 216,
+      "lessons_learned": [
+        "Immutable, offline backups were decisive in avoiding ransom payment",
+        "Downtime procedures must be drilled quarterly",
+        "MFA was missing on a legacy VPN appliance used for initial access"
+      ]
+    },
+    "tags": ["healthcare", "ransomware", "data exfiltration", "downtime"]
+  },
+  {
+    "id": "INC-2022-002",
+    "title": "DDoS attack takes down city emergency services portal",
+    "category": "CYBER_ATTACK",
+    "threat_type": "Distributed Denial of Service",
+    "severity": "HIGH",
+    "date": "2022-08-03",
+    "location": "City of Northbridge",
+    "description": "A volumetric DDoS peaking at 480 Gbps targeted the municipal website, non-emergency 311 line web gateway and online emergency alert sign-up page during a heat advisory. A hacktivist group claimed responsibility. Core 911 telephony was unaffected but public information channels were unavailable for six hours.",
+    "affected_assets": ["Municipal website", "311 web gateway", "Emergency alert portal"],
+    "people_affected": 650000,
+    "past_response": {
+      "actions": [
+        "Rerouted traffic through upstream ISP scrubbing and CDN DDoS protection",
+        "Published critical heat advisory information via social media and radio",
+        "Applied geo-blocking and rate limiting on application endpoints",
+        "Coordinated with CISA and ISP for attribution and traffic analysis"
+      ],
+      "outcome": "Services restored in 6 hours; permanent always-on DDoS protection contracted.",
+      "response_time_hours": 6,
+      "lessons_learned": [
+        "Always-on scrubbing is required for public safety communication channels",
+        "Maintain out-of-band public communication channels independent of city web infrastructure"
+      ]
+    },
+    "tags": ["ddos", "hacktivism", "public information", "government"]
+  },
+  {
+    "id": "INC-2022-003",
+    "title": "Unauthorized access to water treatment SCADA system",
+    "category": "CYBER_ATTACK",
+    "threat_type": "Industrial Control System Intrusion",
+    "severity": "CRITICAL",
+    "date": "2022-02-11",
+    "location": "Lakeview Water Treatment Plant",
+    "description": "An operator observed the HMI cursor moving on its own and the sodium hydroxide setpoint being raised from 100 ppm to 11,100 ppm. Access was traced to a remote desktop tool with a shared password on an internet-exposed workstation. The operator reverted the change before chemical levels reached the distribution system.",
+    "affected_assets": ["SCADA HMI", "Chemical dosing controls", "Remote access workstation"],
+    "people_affected": 15000,
+    "past_response": {
+      "actions": [
+        "Disconnected remote access tools and isolated the OT network from IT",
+        "Placed chemical dosing into manual control with on-site verification",
+        "Increased water quality sampling frequency to hourly",
+        "Notified state drinking water regulator, FBI and CISA",
+        "Replaced shared credentials and deployed MFA for all remote OT access"
+      ],
+      "outcome": "No contaminated water reached consumers; OT network segmentation completed within 30 days.",
+      "response_time_hours": 2,
+      "lessons_learned": [
+        "Shared passwords and unmanaged remote desktop tools are unacceptable in OT environments",
+        "Operator vigilance and manual overrides prevented harm",
+        "Automated setpoint bounds checking should block unsafe values"
+      ]
+    },
+    "tags": ["ics", "scada", "water", "critical infrastructure", "remote access"]
+  },
+  {
+    "id": "INC-2023-004",
+    "title": "Customer database breach via SQL injection",
+    "category": "CYBER_ATTACK",
+    "threat_type": "Data Breach",
+    "severity": "HIGH",
+    "date": "2023-03-22",
+    "location": "Online retail platform (cloud hosted)",
+    "description": "Threat intelligence found a dump of 2.3 million customer records including names, emails, hashed passwords and partial card data on a criminal forum. Investigation revealed a SQL injection vulnerability in a legacy order-tracking endpoint exploited over three weeks.",
+    "affected_assets": ["Customer database", "Order tracking API"],
+    "people_affected": 2300000,
+    "past_response": {
+      "actions": [
+        "Took the vulnerable endpoint offline and deployed WAF virtual patch",
+        "Forced password resets for all customer accounts",
+        "Engaged forensic firm and notified card brands and data protection authority within 72 hours",
+        "Offered credit monitoring to affected customers",
+        "Commissioned code audit of all legacy endpoints"
+      ],
+      "outcome": "Regulatory notification met the 72-hour deadline; fine reduced due to cooperation.",
+      "response_time_hours": 72,
+      "lessons_learned": [
+        "Legacy endpoints must be included in regular penetration tests",
+        "Database activity monitoring would have detected bulk extraction earlier"
+      ]
+    },
+    "tags": ["data breach", "sql injection", "gdpr", "pii"]
+  },
+  {
+    "id": "INC-2023-005",
+    "title": "Supply chain compromise of IT management software update",
+    "category": "CYBER_ATTACK",
+    "threat_type": "Supply Chain Attack",
+    "severity": "CRITICAL",
+    "date": "2023-11-07",
+    "location": "State government agencies (multi-site)",
+    "description": "A vendor disclosed that a signed update of its IT monitoring agent contained a backdoor. The update had been deployed to 3,400 servers across 14 state agencies. Beaconing to attacker infrastructure was confirmed on 60 hosts, and lateral movement was observed in two agencies.",
+    "affected_assets": ["IT monitoring agents", "Domain controllers", "Agency file servers"],
+    "people_affected": 0,
+    "past_response": {
+      "actions": [
+        "Blocked known C2 domains and IPs at all perimeter firewalls",
+        "Uninstalled the compromised agent and isolated hosts with confirmed beaconing",
+        "Hunted for persistence and lateral movement using vendor-provided IOCs",
+        "Rotated service account and domain credentials across affected agencies",
+        "Established joint incident command with CISA and vendor"
+      ],
+      "outcome": "Threat evicted after 5 weeks; two agencies rebuilt their domains from scratch.",
+      "response_time_hours": 840,
+      "lessons_learned": [
+        "Software bill of materials and vendor risk assessments are essential",
+        "Egress filtering from servers would have blocked beaconing"
+      ]
+    },
+    "tags": ["supply chain", "apt", "backdoor", "government"]
+  },
+  {
+    "id": "INC-2019-006",
+    "title": "Major river flooding inundates downtown and residential districts",
+    "category": "NATURAL_DISASTER",
+    "threat_type": "Riverine Flood",
+    "severity": "CRITICAL",
+    "date": "2019-04-02",
+    "location": "Cedar River Valley",
+    "description": "Five days of heavy rain combined with snowmelt pushed the Cedar River 4.2 m above flood stage. Two levees were overtopped, flooding 3,800 homes, the downtown business district and a wastewater treatment plant. Three people died in vehicles attempting to cross flooded roads.",
+    "affected_assets": ["Levees", "Wastewater treatment plant", "Residential neighborhoods", "Road network"],
+    "people_affected": 22000,
+    "past_response": {
+      "actions": [
+        "Issued mandatory evacuation orders for flood zones using emergency alert system",
+        "Opened 6 shelters with Red Cross and deployed National Guard high-water vehicles",
+        "Closed 40 road segments and deployed turn-around-don't-drown barriers",
+        "Sandbagged critical facilities and deployed temporary flood barriers at the hospital",
+        "Issued boil-water advisory after wastewater plant failure",
+        "Requested federal disaster declaration"
+      ],
+      "outcome": "Over 18,000 residents evacuated; federal declaration approved in 4 days.",
+      "response_time_hours": 336,
+      "lessons_learned": [
+        "Road closure enforcement must begin before water reaches roads",
+        "Critical facilities in floodplain need permanent flood protection"
+      ]
+    },
+    "tags": ["flood", "levee", "evacuation", "shelter"]
+  },
+  {
+    "id": "INC-2020-007",
+    "title": "Magnitude 6.8 earthquake strikes metropolitan area",
+    "category": "NATURAL_DISASTER",
+    "threat_type": "Earthquake",
+    "severity": "CRITICAL",
+    "date": "2020-09-18",
+    "location": "Bay Metro Area",
+    "description": "A shallow M6.8 earthquake caused partial collapse of 14 unreinforced masonry buildings, ruptured gas mains sparking 22 fires, and damaged a freeway overpass. 41 fatalities and over 900 injuries were reported. Power was lost to 300,000 customers and cell networks were congested.",
+    "affected_assets": ["Buildings", "Gas distribution", "Freeway overpass", "Power grid", "Cellular networks"],
+    "people_affected": 1200000,
+    "past_response": {
+      "actions": [
+        "Activated emergency operations center and urban search and rescue teams",
+        "Shut off gas to affected zones and prioritized fire suppression",
+        "Established casualty collection points and field triage",
+        "Conducted rapid structural safety assessments (red/yellow/green tagging)",
+        "Deployed mobile cell towers and satellite communications",
+        "Opened mass care shelters and family reunification centers"
+      ],
+      "outcome": "37 people rescued from rubble; utilities restored within 10 days.",
+      "response_time_hours": 240,
+      "lessons_learned": [
+        "Pre-staged USAR caches accelerated rescue",
+        "Automatic seismic gas shutoff valves reduce fire ignitions",
+        "Redundant satellite communications are essential when cell networks congest"
+      ]
+    },
+    "tags": ["earthquake", "search and rescue", "mass casualty", "gas leak"]
+  },
+  {
+    "id": "INC-2021-008",
+    "title": "Wind-driven wildfire threatens suburban communities",
+    "category": "NATURAL_DISASTER",
+    "threat_type": "Wildfire",
+    "severity": "CRITICAL",
+    "date": "2021-10-12",
+    "location": "Pine Ridge foothills",
+    "description": "A wildfire ignited by downed power lines spread at 2 km/h under 90 km/h wind gusts, burning 12,000 hectares in 18 hours. It destroyed 540 structures and forced evacuation of 35,000 residents. Smoke caused hazardous air quality across the region.",
+    "affected_assets": ["Residential structures", "Power distribution lines", "Evacuation routes"],
+    "people_affected": 35000,
+    "past_response": {
+      "actions": [
+        "Issued zone-based evacuation orders and warnings via alerts and door-to-door notification",
+        "Implemented contraflow on primary evacuation routes",
+        "Requested mutual aid strike teams and air tankers",
+        "Utility executed public safety power shutoff in adjacent high-risk circuits",
+        "Opened evacuation centers with air filtration and animal shelters",
+        "Issued air quality health advisories"
+      ],
+      "outcome": "No fatalities; containment reached in 9 days.",
+      "response_time_hours": 216,
+      "lessons_learned": [
+        "Pre-defined evacuation zones enabled clear messaging",
+        "Earlier preemptive power shutoffs could have prevented ignition"
+      ]
+    },
+    "tags": ["wildfire", "evacuation", "power shutoff", "air quality"]
+  },
+  {
+    "id": "INC-2022-009",
+    "title": "Category 4 hurricane landfall on coastal region",
+    "category": "NATURAL_DISASTER",
+    "threat_type": "Hurricane",
+    "severity": "CRITICAL",
+    "date": "2022-09-28",
+    "location": "Gulf Coast counties",
+    "description": "A Category 4 hurricane made landfall with 230 km/h winds and 3.5 m storm surge. Surge flooded barrier islands and coastal towns, and 1.8 million customers lost power. Two bridges to barrier islands were damaged, stranding 4,000 residents who did not evacuate.",
+    "affected_assets": ["Power grid", "Coastal bridges", "Hospitals", "Water systems"],
+    "people_affected": 2500000,
+    "past_response": {
+      "actions": [
+        "Issued mandatory evacuations 48 hours before landfall for surge zones",
+        "Pre-positioned utility crews, fuel, water and meals outside impact zone",
+        "Evacuated vulnerable patients from coastal hospitals and nursing homes",
+        "Conducted post-landfall search and rescue by boat and helicopter",
+        "Established points of distribution for water, food and ice",
+        "Deployed temporary causeway to reconnect barrier island"
+      ],
+      "outcome": "Power restored to 95% in 12 days; 900 people rescued post-landfall.",
+      "response_time_hours": 720,
+      "lessons_learned": [
+        "Evacuation compliance needs targeted messaging for vulnerable populations",
+        "Generator fuel logistics for critical facilities must be pre-contracted"
+      ]
+    },
+    "tags": ["hurricane", "storm surge", "evacuation", "power outage"]
+  },
+  {
+    "id": "INC-2021-010",
+    "title": "Severe winter ice storm causes prolonged outages",
+    "category": "NATURAL_DISASTER",
+    "threat_type": "Winter Storm",
+    "severity": "HIGH",
+    "date": "2021-02-15",
+    "location": "Central Plains region",
+    "description": "Freezing rain accumulating 25 mm of ice collapsed transmission lines and trees, leaving 420,000 customers without power in sub-zero temperatures. Carbon monoxide poisonings rose from improper generator use and roads were impassable for 3 days.",
+    "affected_assets": ["Transmission lines", "Road network", "Water pipes"],
+    "people_affected": 420000,
+    "past_response": {
+      "actions": [
+        "Opened warming centers with transport for vulnerable residents",
+        "Issued carbon monoxide safety messaging in multiple languages",
+        "Prioritized power restoration for hospitals, water plants and shelters",
+        "Deployed plows and National Guard for welfare checks",
+        "Coordinated mutual aid line crews from neighboring states"
+      ],
+      "outcome": "Power restored in 8 days; 12 CO-poisoning deaths prompted new outreach programs.",
+      "response_time_hours": 192,
+      "lessons_learned": [
+        "CO safety messaging must start before the storm hits",
+        "Registry of medically dependent residents speeds welfare checks"
+      ]
+    },
+    "tags": ["winter storm", "power outage", "carbon monoxide", "warming centers"]
+  },
+  {
+    "id": "INC-2021-011",
+    "title": "Cascading regional power grid failure during heat wave",
+    "category": "INFRASTRUCTURE_FAILURE",
+    "threat_type": "Power Grid Failure",
+    "severity": "CRITICAL",
+    "date": "2021-07-19",
+    "location": "Southwest interconnection",
+    "description": "During a 46 degree C heat wave a transmission line fault triggered cascading trips that blacked out 3.2 million customers. Traffic signals, water pumping stations and hospital HVAC systems failed and heat-related emergency calls tripled.",
+    "affected_assets": ["Transmission grid", "Water pumping", "Traffic signals", "Hospital HVAC"],
+    "people_affected": 3200000,
+    "past_response": {
+      "actions": [
+        "Grid operator performed black-start restoration in priority sequence",
+        "Deployed generators to hospitals, water pumping and dialysis centers",
+        "Opened cooling centers and paused utility disconnections",
+        "Deployed police to major intersections for traffic control",
+        "Issued conservation appeals once partial service was restored"
+      ],
+      "outcome": "Full restoration in 30 hours; 14 heat-related deaths.",
+      "response_time_hours": 30,
+      "lessons_learned": [
+        "Critical facility generator testing under load must be verified annually",
+        "Cooling centers need backup power"
+      ]
+    },
+    "tags": ["blackout", "heat wave", "grid", "critical facilities"]
+  },
+  {
+    "id": "INC-2022-012",
+    "title": "Water main break and contamination triggers boil-water order",
+    "category": "INFRASTRUCTURE_FAILURE",
+    "threat_type": "Water System Contamination",
+    "severity": "HIGH",
+    "date": "2022-06-06",
+    "location": "Eastside water distribution zone",
+    "description": "A 1.2 m transmission main ruptured, dropping pressure below 20 psi across the eastside zone. Post-break sampling detected E. coli in two locations. 180,000 residents, three hospitals and 40 schools were affected.",
+    "affected_assets": ["Transmission water main", "Distribution network"],
+    "people_affected": 180000,
+    "past_response": {
+      "actions": [
+        "Issued boil-water advisory via alerts, media and door hangers",
+        "Isolated the break and flushed and chlorinated affected mains",
+        "Distributed bottled water at 8 points of distribution",
+        "Coordinated with hospitals on alternate water supplies",
+        "Collected confirmation samples for two consecutive days before lifting advisory"
+      ],
+      "outcome": "Advisory lifted after 5 days; no confirmed illness cluster.",
+      "response_time_hours": 120,
+      "lessons_learned": [
+        "Pre-scripted multilingual boil-water messages accelerated notification",
+        "Aging transmission mains need condition assessment"
+      ]
+    },
+    "tags": ["water", "boil water", "contamination", "infrastructure"]
+  },
+  {
+    "id": "INC-2023-013",
+    "title": "Highway bridge structural failure during rush hour",
+    "category": "INFRASTRUCTURE_FAILURE",
+    "threat_type": "Structural Collapse",
+    "severity": "CRITICAL",
+    "date": "2023-01-28",
+    "location": "Route 9 bridge over Mill Creek",
+    "description": "A 45 m span of a steel girder highway bridge collapsed during morning rush hour, sending 6 vehicles and a bus into the ravine. 10 people were injured and a ruptured gas line on the bridge created a fire hazard.",
+    "affected_assets": ["Highway bridge", "Gas line", "Transit route"],
+    "people_affected": 30000,
+    "past_response": {
+      "actions": [
+        "Dispatched technical rope rescue and structural collapse teams",
+        "Shut off the gas line and established hazard exclusion zone",
+        "Closed the corridor and activated detour routes with traffic management",
+        "Initiated inspection of all bridges of similar design statewide",
+        "Preserved scene for NTSB investigation"
+      ],
+      "outcome": "All occupants rescued; no fatalities; replacement bridge opened in 11 months.",
+      "response_time_hours": 12,
+      "lessons_learned": [
+        "Fracture-critical bridges need accelerated inspection intervals",
+        "Utilities attached to bridges require automatic shutoff capability"
+      ]
+    },
+    "tags": ["bridge", "collapse", "rescue", "transportation"]
+  },
+  {
+    "id": "INC-2023-014",
+    "title": "Regional telecom outage disables 911 call routing",
+    "category": "INFRASTRUCTURE_FAILURE",
+    "threat_type": "Telecommunications Outage",
+    "severity": "CRITICAL",
+    "date": "2023-08-10",
+    "location": "Tri-county region",
+    "description": "A failed router software update at a carrier caused a 7-hour outage of 911 call routing to four public safety answering points. Callers received busy signals and an estimated 900 emergency calls failed to connect.",
+    "affected_assets": ["911 routing", "PSAP phone systems", "Cellular voice service"],
+    "people_affected": 1100000,
+    "past_response": {
+      "actions": [
+        "Published alternate 10-digit emergency numbers and text-to-911 guidance",
+        "Staffed fire stations and police stations as walk-in emergency reporting points",
+        "Carrier rolled back the software update and rerouted via backup trunks",
+        "Filed outage reports with telecom regulator",
+        "Conducted callback to abandoned 911 call numbers after restoration"
+      ],
+      "outcome": "Service restored after 7 hours; regulator fined carrier for missing redundancy.",
+      "response_time_hours": 7,
+      "lessons_learned": [
+        "PSAPs need diverse carrier routing",
+        "Pre-approved public messaging for 911 outages saves critical time"
+      ]
+    },
+    "tags": ["911", "telecom", "outage", "public safety communications"]
+  },
+  {
+    "id": "INC-2022-015",
+    "title": "Active shooter incident at shopping mall",
+    "category": "PUBLIC_SAFETY",
+    "threat_type": "Active Shooter",
+    "severity": "CRITICAL",
+    "date": "2022-12-17",
+    "location": "Westgate Shopping Center",
+    "description": "A lone gunman opened fire in the crowded food court during holiday shopping. Police received over 200 calls in 4 minutes. 5 people were killed and 11 wounded before the suspect was neutralized 7 minutes after the first call.",
+    "affected_assets": ["Shopping mall", "Adjacent transit hub"],
+    "people_affected": 3000,
+    "past_response": {
+      "actions": [
+        "First arriving officers formed contact team and engaged the threat",
+        "Rescue task forces with EMS entered warm zones to treat casualties",
+        "Established unified command, staging area and casualty collection point",
+        "Evacuated and searched the mall, and established a family reunification center",
+        "Coordinated hospital surge notifications and victim identification",
+        "Delivered public information updates through a single joint information center"
+      ],
+      "outcome": "Threat neutralized in 7 minutes; all wounded transported within 45 minutes.",
+      "response_time_hours": 10,
+      "lessons_learned": [
+        "Rescue task force training reduced time to treatment",
+        "Reunification center location should be pre-planned for major venues"
+      ]
+    },
+    "tags": ["active shooter", "mass casualty", "law enforcement", "reunification"]
+  },
+  {
+    "id": "INC-2023-016",
+    "title": "Train derailment releases toxic chlorine gas",
+    "category": "PUBLIC_SAFETY",
+    "threat_type": "Hazardous Materials Release",
+    "severity": "CRITICAL",
+    "date": "2023-04-05",
+    "location": "East Haven rail yard",
+    "description": "A freight train derailed and breached a tank car carrying 80 tons of chlorine, creating a toxic plume drifting toward residential areas. 60 people reported respiratory symptoms and two rail workers were hospitalized in critical condition.",
+    "affected_assets": ["Rail line", "Residential neighborhoods", "Schools"],
+    "people_affected": 12000,
+    "past_response": {
+      "actions": [
+        "Established hot, warm and cold zones and issued shelter-in-place orders downwind",
+        "Evacuated the 1.5 km radius upwind and crosswind",
+        "Deployed hazmat teams to plug the breach and apply water curtains",
+        "Set up decontamination at hospitals and field sites",
+        "Deployed air monitoring networks and published readings",
+        "Coordinated with railroad, EPA and chemical manufacturer CHEMTREC"
+      ],
+      "outcome": "Leak stopped in 14 hours; residents returned after 3 days of air monitoring.",
+      "response_time_hours": 72,
+      "lessons_learned": [
+        "Plume modeling must drive zone-based shelter-in-place messaging",
+        "Hospitals need advance notice for decontamination surge"
+      ]
+    },
+    "tags": ["hazmat", "chlorine", "derailment", "shelter in place"]
+  },
+  {
+    "id": "INC-2022-017",
+    "title": "Crowd crush at stadium concert exit",
+    "category": "PUBLIC_SAFETY",
+    "threat_type": "Crowd Crush",
+    "severity": "HIGH",
+    "date": "2022-11-05",
+    "location": "Metro Stadium",
+    "description": "After a concert, a surge toward a narrow exit concourse created a crowd crush. 32 people were injured, 4 critically, and emergency responders had trouble accessing the concourse through dense crowds.",
+    "affected_assets": ["Stadium exits", "Concourse", "Transit station"],
+    "people_affected": 45000,
+    "past_response": {
+      "actions": [
+        "Stopped the performance of the after-show and used PA announcements to halt egress",
+        "Opened all emergency exits and redirected crowd flow",
+        "Established medical triage on the field level",
+        "Coordinated transit to hold trains and prevent platform overcrowding",
+        "Commissioned crowd dynamics review of venue egress"
+      ],
+      "outcome": "No fatalities; venue redesigned exit routes and added crowd density monitoring.",
+      "response_time_hours": 4,
+      "lessons_learned": [
+        "Real-time crowd density monitoring can detect crush precursors",
+        "Pre-agreed show-stop procedures must be communicated to performers"
+      ]
+    },
+    "tags": ["crowd management", "mass gathering", "stadium", "mass casualty"]
+  },
+  {
+    "id": "INC-2023-018",
+    "title": "Foodborne illness outbreak linked to school lunch program",
+    "category": "PUBLIC_SAFETY",
+    "threat_type": "Public Health Outbreak",
+    "severity": "MEDIUM",
+    "date": "2023-09-19",
+    "location": "Unified School District",
+    "description": "Over 48 hours, 210 students across 9 schools reported vomiting and diarrhea. Lab testing confirmed Salmonella traced to pre-cut produce from a single supplier. 14 children were hospitalized and none died.",
+    "affected_assets": ["School cafeterias", "Food supply chain"],
+    "people_affected": 210,
+    "past_response": {
+      "actions": [
+        "Removed and quarantined the implicated produce from all district kitchens",
+        "Health department conducted case interviews and lab testing",
+        "Issued parent notifications with symptom guidance",
+        "Coordinated recall with supplier and food safety regulator",
+        "Enhanced cafeteria sanitation and temporary menu substitutions"
+      ],
+      "outcome": "Outbreak contained within 1 week; supplier recall issued in 3 states.",
+      "response_time_hours": 168,
+      "lessons_learned": [
+        "Supplier traceability records enabled rapid source identification",
+        "Parent communication templates reduced confusion"
+      ]
+    },
+    "tags": ["outbreak", "public health", "food safety", "schools"]
+  }
+]

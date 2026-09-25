@@ -1,0 +1,25 @@
+# Versions pinned to the combination verified with the smoke test.
+# NOTE: sentence-transformers pulls in PyTorch. The Dockerfile pre-installs the
+# CPU-only wheel to avoid downloading multi-GB CUDA builds.
+
+# Agent orchestration + LLM
+langgraph==1.2.12
+langchain-core==1.6.5
+langchain-groq==1.1.3
+
+# RAG / vector storage
+chromadb==1.5.9
+sentence-transformers==6.1.0
+
+# API
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+httpx==0.28.1
+
+# Persistence
+SQLAlchemy==2.1.0
+psycopg2-binary==2.9.13
+
+# Config + validation
+python-dotenv==1.2.3
+pydantic==2.13.5
