@@ -89,6 +89,19 @@ uvicorn api.main:app --reload
 
 ---
 
+## Dashboard
+
+`dashboard.html` is a single self-contained file (vanilla JS/CSS, no dependencies) with a live incident feed, stats, a submit form, a real-time agent pipeline and deployed-services panels.
+
+- **Served by the API:** open http://localhost:8000/dashboard (or `/`).
+- **As a local file:** double-click `dashboard.html`. It calls `http://localhost:8000`, which CORS allows (`CORS_ALLOW_ORIGINS`, default `*`). Use `dashboard.html?api=http://host:port` to point it at another backend.
+- Submissions use `POST /incident?run_async=true`, then poll `GET /incidents/{id}` every second. Each agent's metrics are stored the moment that agent finishes, so the pipeline lights up step by step with real latencies.
+- **Incident map (Leaflet + OpenStreetMap):**
+  - Each incident's `location` text is geocoded through Nominatim, at most one request every 1.1 s. Results are cached in memory for the page session.
+  - Markers are coloured by severity, and CRITICAL markers pulse. Incidents with no location, or with no geocoding match, are skipped.
+  - The map needs internet access. Location text is sent to OpenStreetMap's Nominatim service.
+- Deployed services are inferred client-side from the threat type, with the incident category as a fallback (`SERVICE_RULES` in the script). The phone number is saved as the reporter contact. **No SMS is sent** unless you add an SMS gateway.
+
 ## API
 
 | Method | Path | Description |

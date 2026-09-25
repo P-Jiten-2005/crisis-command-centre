@@ -74,6 +74,11 @@ class Incident(Base):
         lazy="selectin",
     )
 
+    @property
+    def total_latency_ms(self) -> float | None:
+        """End-to-end agent latency for this incident, if processing has finished."""
+        return (self.metrics or {}).get("total_latency_ms")
+
     def __repr__(self) -> str:
         """Return a concise debug representation."""
         return f"<Incident id={self.id} severity={self.severity} status={self.status}>"

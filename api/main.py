@@ -7,14 +7,15 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from agents.safeguards import PromptInjectionDetector
 from agents.schemas import IncidentSubmission, Severity
 from api.schemas import HealthStatus, IncidentDetail, IncidentList, IncidentSummary, InjectionRejection
-from config import get_settings
+from config import PROJECT_ROOT, get_settings
 from db.database import get_database, get_db
 from db.models import Incident, IncidentStatus
 from graph.workflow import CrisisWorkflow, get_workflow
@@ -62,6 +63,32 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Lets the browser dashboard call the API when opened from file:// or another origin.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_allow_origins,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+DASHBOARD_FILE = PROJECT_ROOT / "dashboard.html"
+
+
+@app.get("/", include_in_schema=False)
+@app.get("/dashboard", include_in_schema=False)
+def dashboard() -> FileResponse:
+    """Serve the single-file command dashboard.
+
+    Returns:
+        The dashboard HTML.
+
+    Raises:
+        HTTPException: 404 if ``dashboard.html`` is missing.
+    """
+    if not DASHBOARD_FILE.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="dashboard.html not found")
+    return FileResponse(DASHBOARD_FILE, media_type="text/html")
 
 
 def workflow_dependency() -> CrisisWorkflow:

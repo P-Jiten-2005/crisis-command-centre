@@ -64,6 +64,7 @@ class Settings(BaseModel):
     injection_threshold: float = Field(default=0.7, gt=0.0, le=1.0)
     memory_window: int = Field(default=5, ge=0, le=50)
     log_level: str = Field(default="INFO")
+    cors_allow_origins: list[str] = Field(default_factory=lambda: ["*"])
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -93,6 +94,7 @@ class Settings(BaseModel):
             injection_threshold=float(os.getenv("INJECTION_THRESHOLD", "0.7")),
             memory_window=int(os.getenv("MEMORY_WINDOW", "5")),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
+            cors_allow_origins=[o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",") if o.strip()],
         )
 
     def require_groq_key(self) -> str:

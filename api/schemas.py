@@ -38,6 +38,8 @@ class IncidentSummary(BaseModel):
     category: str | None = None
     status: str
     confidence: float | None = None
+    location: str | None = None
+    total_latency_ms: float | None = None
     created_at: datetime | None = None
 
 
@@ -46,7 +48,6 @@ class IncidentDetail(IncidentSummary):
 
     description: str
     raw_report: str
-    location: str | None = None
     reported_by: str | None = None
     source: str | None = None
     incident_data: dict[str, Any] | None = None

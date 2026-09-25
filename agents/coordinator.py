@@ -10,6 +10,7 @@ Graph topology::
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
@@ -210,6 +211,48 @@ class CrisisCoordinator:
         Returns:
             The final workflow state.
         """
+        initial, config = self._prepare(raw_report, submission, incident_id, memory)
+        return self.graph.invoke(initial, config=config)
+
+    def stream(
+        self,
+        raw_report: str,
+        submission: dict[str, Any] | None = None,
+        incident_id: str | None = None,
+        memory: dict[str, Any] | None = None,
+    ) -> Iterator[CrisisState]:
+        """Execute the workflow, yielding the full state after every node.
+
+        Args:
+            raw_report: The raw incident report text.
+            submission: Submission metadata (title, location, ...).
+            incident_id: Database ID for tracing.
+            memory: Initial memory (e.g. recent incidents loaded from PostgreSQL).
+
+        Yields:
+            The accumulated workflow state after each step; the last one is final.
+        """
+        initial, config = self._prepare(raw_report, submission, incident_id, memory)
+        yield from self.graph.stream(initial, config=config, stream_mode="values")
+
+    @staticmethod
+    def _prepare(
+        raw_report: str,
+        submission: dict[str, Any] | None,
+        incident_id: str | None,
+        memory: dict[str, Any] | None,
+    ) -> tuple[CrisisState, dict[str, Any]]:
+        """Build the initial state and run config.
+
+        Args:
+            raw_report: The raw incident report text.
+            submission: Submission metadata.
+            incident_id: Database ID for tracing.
+            memory: Initial memory.
+
+        Returns:
+            The initial state and the LangGraph run config.
+        """
         initial: CrisisState = {
             "incident_id": incident_id or "",
             "raw_report": raw_report,
@@ -225,7 +268,7 @@ class CrisisCoordinator:
             "overall_confidence": None,
         }
         config = {"run_name": "crisis-workflow", "tags": [f"incident:{incident_id}"], "recursion_limit": 25}
-        return self.graph.invoke(initial, config=config)
+        return initial, config
 
     def mermaid(self) -> str:
         """Return a Mermaid diagram of the compiled graph.

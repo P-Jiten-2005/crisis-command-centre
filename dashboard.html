@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crisis Command Centre</title>
+<meta name="description" content="Real-time crisis command dashboard for the multi-agent Crisis Command API.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23080808'/%3E%3Cpath d='M4 17h6l3-7 4 13 3-9 2 3h6' fill='none' stroke='%23ff2020' stroke-width='2.6' stroke-linecap='square'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root {
+    --bg: #080808;
+    --surface: #111111;
+    --surface-2: #1a1a1a;
+    --border: #222222;
+    --border-strong: #333333;
+    --text: #f0f0f0;
+    --text-muted: #555555;
+    --text-soft: #9a9a9a;      /* secondary body copy (readable muted) */
+    --critical: #ff2020;
+    --high: #ff8000;
+    --medium: #f0c000;
+    --low: #00cc66;
+    --accent: #ffffff;
+    --radius: 2px;
+    --font: "Inter", sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 400 14px/1.5 var(--font);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--text-muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); }
+
+  /* ---------- Header ---------- */
+  .shell { max-width: 1480px; margin: 0 auto; padding: 0 24px 40px; }
+  header.top { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .top-inner {
+    max-width: 1480px; margin: 0 auto; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { margin: 0; display: flex; flex-direction: column; line-height: 1.05; }
+  .brand-main { font-size: 17px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .brand-sub { font-size: 13px; font-weight: 300; letter-spacing: .5em; text-transform: uppercase; color: var(--text-soft); margin-top: 3px; }
+  .top-right { display: flex; align-items: center; gap: 28px; }
+  .clock { text-align: right; line-height: 1.25; }
+  .clock .time { font-size: 20px; font-weight: 500; letter-spacing: .06em; }
+  .clock .date { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .12em; }
+  .conn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--text-muted);
+  }
+  .dot { width: 6px; height: 6px; background: var(--text-muted); flex: none; }
+  .conn.online { color: var(--low); border-color: color-mix(in srgb, var(--low) 40%, transparent); }
+  .conn.online .dot { background: var(--low); animation: blink 2s infinite; }
+  .conn.offline { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 50%, transparent); }
+  .conn.offline .dot { background: var(--critical); }
+
+  .offline-banner {
+    display: none; margin-top: 20px; padding: 10px 14px;
+    border: 1px solid var(--critical); border-left-width: 3px; border-radius: var(--radius);
+    color: var(--text); font-size: 13px;
+  }
+  .offline-banner.show { display: block; }
+  .offline-banner code { font-family: var(--mono); color: var(--critical); }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 24px 0; border: 1px solid var(--border); background: var(--border); gap: 1px;
+  }
+  .stat { background: var(--bg); padding: 18px 20px 16px; }
+  .stat .label { font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); }
+  .stat .value { font: 700 2.5rem/1.1 var(--mono); letter-spacing: -.02em; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .stat .sub { font: 400 11px var(--mono); color: var(--text-muted); margin-top: 6px; }
+  .stat.critical .value.hot { color: var(--critical); }
+
+  /* ---------- Panels ---------- */
+  .grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+  .side { display: grid; gap: 24px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .panel-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .panel-head h2 { font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; margin: 0; }
+  .panel-head .meta { margin-left: auto; font: 400 11px var(--mono); color: var(--text-muted); }
+  .panel-body { padding: 18px; }
+
+  /* ---------- Feed ---------- */
+  .filters { display: flex; gap: 0; border: 1px solid var(--border); }
+  .chip-btn {
+    border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--text-muted);
+    padding: 4px 10px; font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  }
+  .chip-btn:last-child { border-right: 0; }
+  .chip-btn:hover { color: var(--text); }
+  .chip-btn[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+  .feed-list { display: grid; gap: 8px; padding: 18px; max-height: calc(100vh - 260px); min-height: 360px; overflow-y: auto; }
+  .empty { padding: 48px 16px; text-align: center; color: var(--text-muted); font: 400 12px var(--mono); letter-spacing: .06em; }
+
+  .card {
+    --sev: var(--border-strong);
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--sev);
+    border-radius: 0; transition: border-color .15s; scroll-margin-top: 90px;
+  }
+  .card:hover { border-color: var(--border-strong); border-left-color: var(--sev); }
+  .card.sev-CRITICAL { --sev: var(--critical); }
+  .card.sev-HIGH { --sev: var(--high); }
+  .card.sev-MEDIUM { --sev: var(--medium); }
+  .card.sev-LOW { --sev: var(--low); }
+  .card-head {
+    width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px;
+    padding: 14px 16px; background: none; border: 0; text-align: left; cursor: pointer;
+  }
+  .card-main { display: grid; gap: 6px; min-width: 0; }
+  .card-title { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .sev-dot { display: none; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .card.sev-CRITICAL .sev-dot { display: inline-block; background: var(--critical); animation: pulse 1s ease-in-out infinite; }
+  .card.sev-HIGH .sev-dot { display: inline-block; background: var(--high); }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+  .card-sub {
+    display: flex; flex-wrap: wrap; gap: 4px 0;
+    font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .card-sub > span:not(:last-child)::after { content: "·"; margin: 0 8px; color: var(--border-strong); }
+  .sev-label { color: var(--sev); font-weight: 700; }
+  .card-side { display: grid; justify-items: end; align-content: start; gap: 6px; text-align: right; }
+  .card-time { font: 400 11px var(--mono); color: var(--text-soft); white-space: nowrap; }
+  .chev { font: 400 14px var(--mono); color: var(--text-muted); transition: transform .2s; line-height: 1; }
+  .card[data-open="true"] .chev { transform: rotate(45deg); color: var(--text); }
+  .card-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+  .svc {
+    font: 600 10px var(--mono); letter-spacing: .12em; text-transform: uppercase;
+    padding: 3px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text-soft);
+  }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 600 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .status::before { content: ""; width: 5px; height: 5px; background: currentColor; }
+  .status.COMPLETED { color: var(--low); }
+  .status.PROCESSING, .status.RECEIVED { color: var(--medium); }
+  .status.PROCESSING::before, .status.RECEIVED::before { animation: blink 1s infinite; }
+  .status.FAILED { color: var(--critical); }
+  .status.BLOCKED { color: var(--text-soft); }
+  @keyframes blink { 50% { opacity: .2; } }
+
+  /* Severity label (used in the submit result) */
+  .badge {
+    display: inline-flex; align-items: center; padding: 2px 7px;
+    font: 700 10px var(--mono); letter-spacing: .14em; white-space: nowrap;
+    border: 1px solid currentColor; border-radius: var(--radius); background: transparent;
+  }
+  .badge.sev-CRITICAL { color: var(--critical); }
+  .badge.sev-HIGH { color: var(--high); }
+  .badge.sev-MEDIUM { color: var(--medium); }
+  .badge.sev-LOW { color: var(--low); }
+  .badge.sev-NONE { color: var(--text-muted); }
+  .threat { color: var(--text-soft); font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .card-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* Expanded response strategy: monospace block */
+  .card-detail { display: none; padding: 0 16px 16px; }
+  .card[data-open="true"] .card-detail { display: block; }
+  .detail-grid {
+    display: grid; gap: 16px; padding: 16px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    font: 400 12px/1.65 var(--mono);
+  }
+  .kv { display: flex; gap: 20px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+  .kv b { color: var(--text); font-weight: 500; }
+  .sec h4 { margin: 0 0 8px; font: 700 10px var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); }
+  .sec p { margin: 0; color: var(--text); }
+  .actions { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+  .actions li { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .prio { font: 700 10px var(--mono); color: var(--text-muted); letter-spacing: .06em; }
+  .prio.p1 { color: var(--critical); }
+  .prio.p2 { color: var(--high); }
+  .act-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-size: 11px; padding: 1px 7px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text-soft); }
+  .plain-list { margin: 0; padding-left: 16px; color: var(--text); }
+  .plain-list li { margin: 3px 0; }
+  .plain-list li::marker { color: var(--text-muted); }
+  .err-box {
+    padding: 10px 12px; border: 1px solid var(--critical); border-left-width: 3px; border-radius: var(--radius);
+    color: var(--text); font: 400 12px/1.5 var(--mono); overflow-wrap: anywhere;
+  }
+  details.more summary { cursor: pointer; color: var(--text-soft); font: 700 10px var(--mono); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 8px; }
+
+  /* ---------- Form ---------- */
+  form { display: grid; gap: 14px; }
+  label { display: grid; gap: 8px; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted); }
+  .hint { font-weight: 400; letter-spacing: .06em; text-transform: none; color: var(--text-muted); }
+  textarea, input[type="text"], input[type="tel"] {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 12px; color: var(--text); font: 400 14px/1.5 var(--font); letter-spacing: 0; text-transform: none;
+  }
+  input[type="tel"] { font-family: var(--mono); font-size: 13px; }
+  textarea { min-height: 130px; resize: vertical; }
+  textarea::placeholder, input::placeholder { color: var(--text-muted); }
+  textarea:focus, input:focus { border-color: var(--accent); outline: none; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end; }
+  .counter { justify-self: end; font: 400 10px var(--mono); color: var(--text-muted); margin-top: -8px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 12px 16px; border: 1px solid var(--accent); border-radius: var(--radius); cursor: pointer;
+    background: var(--accent); color: var(--bg); font: 700 11px var(--font); letter-spacing: .22em; text-transform: uppercase;
+    transition: background .15s, color .15s;
+  }
+  .btn:hover { background: transparent; color: var(--accent); }
+  .btn:disabled { background: transparent; color: var(--text-soft); border-color: var(--border-strong); cursor: progress; }
+  .spinner { width: 12px; height: 12px; flex: none; border: 1px solid currentColor; animation: spin 1s linear infinite; }
+  .spinner.lg { width: 16px; height: 16px; color: var(--medium); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .form-msg { font: 400 12px var(--mono); }
+  .form-msg:empty { display: none; }
+  .form-msg.error { color: var(--critical); }
+
+  .result {
+    display: none; margin-top: 16px; padding: 14px 16px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .result.show { display: block; }
+  .result.processing { display: flex; align-items: center; gap: 14px; }
+  .result.processing b { font-weight: 600; }
+  .result.processing .muted { font: 400 11px var(--mono); color: var(--text-soft); }
+  .result h3 { margin: 12px 0 6px; font-size: 1rem; font-weight: 600; }
+  .result .summary { color: var(--text-soft); margin: 0 0 12px; }
+  .result .plain-list { font: 400 12px/1.6 var(--mono); }
+  .link-btn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; border-bottom: 1px solid var(--border-strong); }
+  .link-btn:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr auto; align-items: center; padding: 22px 18px 18px; }
+  .step {
+    display: grid; gap: 2px; min-width: 76px; padding: 4px 0 4px 10px;
+    border-left: 2px solid var(--border-strong); color: var(--text-muted); transition: color .2s, border-color .2s;
+  }
+  .node { font: 500 10px var(--mono); letter-spacing: .1em; color: inherit; opacity: .8; }
+  .step .name { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .step .lat { font: 400 11px var(--mono); min-height: 17px; color: inherit; }
+  .link { height: 1px; margin: 0 10px; background: var(--border-strong); }
+  .link.done { background: var(--low); }
+  .step.active { color: var(--accent); border-left-color: var(--accent); }
+  .step.active .lat { animation: blink 1s infinite; }
+  .step.done { color: var(--low); border-left-color: var(--low); }
+  .step.error { color: var(--critical); border-left-color: var(--critical); }
+  .step.skipped { opacity: .35; }
+  .pipe-foot { padding: 0 18px 18px; font: 400 11px var(--mono); color: var(--text-muted); display: flex; gap: 20px; flex-wrap: wrap; text-transform: uppercase; letter-spacing: .08em; }
+  .pipe-foot b { color: var(--text); font-weight: 500; }
+
+  /* ---------- Services ---------- */
+  .services { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; padding: 1px; }
+  .service { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--surface); outline: 1px solid var(--border); border-left: 2px solid transparent; transition: all .2s; }
+  .service .icon { font-size: 18px; line-height: 1; filter: grayscale(1); opacity: .3; }
+  .service .sname { font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--text-muted); }
+  .service .state { font: 700 10px var(--mono); letter-spacing: .16em; color: var(--text-muted); margin-top: 3px; }
+  .service.on { border-left-color: var(--low); background: var(--surface-2); }
+  .service.on .icon { filter: none; opacity: 1; }
+  .service.on .sname { color: var(--text); }
+  .service.on .state { color: var(--low); }
+  .svc-caption { font: 400 11px var(--mono); color: var(--text-muted); margin: 0 0 14px; overflow-wrap: anywhere; }
+  .svc-caption b { color: var(--text); font-weight: 500; }
+
+  footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); font: 400 11px var(--mono); color: var(--text-muted); text-align: center; letter-spacing: .04em; }
+  footer code { font-family: var(--mono); color: var(--text-soft); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1080px) {
+    .grid { grid-template-columns: 1fr; }
+    .feed-list { max-height: none; }
+  }
+  @media (max-width: 720px) {
+    .shell, .top-inner { padding-left: 16px; padding-right: 16px; }
+    .top-right { gap: 14px; }
+    .clock .time { font-size: 15px; }
+    .clock .date { display: none; }
+    .brand-main { font-size: 14px; }
+    .brand-sub { font-size: 11px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat { padding: 14px; }
+    .stat .value { font-size: 2rem; }
+    .row-2 { grid-template-columns: 1fr; }
+    .card-head { grid-template-columns: 1fr; }
+    .card-side { justify-items: start; text-align: left; grid-auto-flow: column; justify-content: start; align-items: center; gap: 12px; }
+    .pipeline { padding: 18px 12px 14px; }
+    .step { min-width: 0; padding-left: 7px; }
+    .step .name { font-size: 10px; letter-spacing: .08em; }
+    .link { margin: 0 5px; }
+    .panel-head .meta { margin-left: 0; width: 100%; }
+  }
+  /* ---------- Incident map ---------- */
+  .map-panel { margin-bottom: 24px; border-radius: 0; }
+  #incident-map { height: 350px; background: var(--surface); position: relative; z-index: 0; isolation: isolate; }
+  .map-tiles { filter: invert(100%) hue-rotate(180deg); }
+  .map-unavailable { height: 100%; display: grid; place-items: center; color: var(--text-muted); font: 400 12px var(--mono); letter-spacing: .06em; }
+  .leaflet-container { background: var(--surface); font-family: var(--font); }
+  .map-marker.sev-CRITICAL { transform-box: fill-box; transform-origin: center; animation: pulse 1s ease-in-out infinite; }
+  .leaflet-bar { border: 1px solid var(--border) !important; border-radius: 0; box-shadow: none !important; }
+  .leaflet-bar a, .leaflet-bar a:hover { background: var(--surface-2); color: var(--text); border-bottom-color: var(--border); border-radius: 0 !important; }
+  .leaflet-bar a:hover { background: var(--border-strong); }
+  .leaflet-control-attribution.leaflet-control { background: rgba(8, 8, 8, .8); color: var(--text-muted); font: 400 10px var(--mono); }
+  .leaflet-control-attribution a { color: var(--text-soft); }
+  .leaflet-popup-content-wrapper {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    box-shadow: none;
+  }
+  .leaflet-popup-tip { background: var(--surface-2); box-shadow: none; }
+  .leaflet-popup-content { margin: 12px 14px; line-height: 1.45; }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--text-muted); }
+  .leaflet-container a.leaflet-popup-close-button:hover { color: var(--text); }
+  .map-popup { display: grid; gap: 8px; min-width: 190px; }
+  .map-popup-title { font-size: 13px; font-weight: 600; padding-right: 12px; }
+  .map-popup-loc { font: 400 11px var(--mono); color: var(--text-muted); }
+  .map-popup-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <h1 class="brand" aria-label="Crisis Command Centre">
+      <span class="brand-main">Crisis Command</span>
+      <span class="brand-sub">Centre</span>
+    </h1>
+    <div class="top-right">
+      <div class="clock" aria-label="Current time">
+        <div class="time mono" id="clock-time">--:--:--</div>
+        <div class="date mono" id="clock-date">&nbsp;</div>
+      </div>
+      <div class="conn mono" id="conn" role="status" aria-live="polite" title="Checking API…">
+        <span class="dot"></span><span id="conn-label">CONNECTING</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="offline-banner" id="offline-banner" role="alert">
+    Cannot reach the API at <code id="api-url"></code>. Start it with <code>uvicorn api.main:app</code>
+    (or <code>docker compose up</code>) — retrying every 10 seconds.
+  </div>
+
+  <!-- Stats -->
+  <section class="stats" aria-label="Key statistics">
+    <div class="stat">
+      <div class="label">Incidents today</div>
+      <div class="value mono" id="stat-today">–</div>
+      <div class="sub" id="stat-today-sub">&nbsp;</div>
+    </div>
+    <div class="stat critical">
+      <div class="label">Critical incidents</div>
+      <div class="value mono" id="stat-critical">–</div>
+      <div class="sub" id="stat-critical-sub">&nbsp;</div>
+    </div>
+    <div class="stat deploy">
+      <div class="label">Active deployments</div>
+      <div class="value mono" id="stat-deploy">–</div>
+      <div class="sub">services dispatched today</div>
+    </div>
+    <div class="stat time">
+      <div class="label">Avg response time</div>
+      <div class="value mono" id="stat-latency">–</div>
+      <div class="sub">AI pipeline, today's incidents</div>
+    </div>
+  </section>
+
+  <!-- Incident map -->
+  <section class="panel map-panel" aria-labelledby="map-title">
+    <div class="panel-head">
+      <h2 id="map-title">Incident map</h2>
+      <span class="meta mono" id="map-meta">&nbsp;</span>
+    </div>
+    <div id="incident-map" role="region" aria-label="Map of incident locations"></div>
+  </section>
+
+  <main class="grid">
+    <!-- Incident feed -->
+    <section class="panel" aria-labelledby="feed-title">
+      <div class="panel-head">
+        <h2 id="feed-title">Incident feed</h2>
+        <div class="filters" role="group" aria-label="Filter by severity">
+          <button class="chip-btn" data-filter="ALL" aria-pressed="true">All</button>
+          <button class="chip-btn" data-filter="CRITICAL" aria-pressed="false">Critical</button>
+          <button class="chip-btn" data-filter="HIGH" aria-pressed="false">High</button>
+          <button class="chip-btn" data-filter="MEDIUM" aria-pressed="false">Medium</button>
+          <button class="chip-btn" data-filter="LOW" aria-pressed="false">Low</button>
+        </div>
+        <span class="meta mono" id="feed-meta">&nbsp;</span>
+      </div>
+      <div class="feed-list" id="feed" aria-live="polite">
+        <div class="empty">Loading incidents…</div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <!-- Submit -->
+      <section class="panel" aria-labelledby="submit-title">
+        <div class="panel-head"><h2 id="submit-title">Report an incident</h2></div>
+        <div class="panel-body">
+          <form id="form" novalidate>
+            <label for="report">Describe the incident
+              <textarea id="report" maxlength="10000" required
+                placeholder="What is happening, where, how many people are affected, what you can see…"></textarea>
+            </label>
+            <div class="counter mono" id="counter">0 / 10000</div>
+            <div class="row-2">
+              <label for="phone">Your phone number <span class="hint">(for SMS confirmation)</span>
+                <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="+1 555 010 2030">
+              </label>
+              <label for="location">Location
+                <input id="location" type="text" maxlength="200" autocomplete="off" placeholder="Street, building or area">
+              </label>
+            </div>
+            <div class="form-msg" id="form-msg" role="alert"></div>
+            <button class="btn" type="submit" id="submit-btn">
+              <span id="submit-label">Submit incident</span>
+            </button>
+          </form>
+          <div class="result" id="result" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- Pipeline -->
+      <section class="panel" aria-labelledby="pipe-title">
+        <div class="panel-head">
+          <h2 id="pipe-title">Agent pipeline</h2>
+          <span class="meta mono" id="pipe-meta">idle</span>
+        </div>
+        <div class="pipeline" id="pipeline">
+          <div class="step" data-step="intake"><div class="node">1</div><div class="name">Intake</div><div class="lat"></div></div>
+          <div class="link" data-link="1"></div>
+          <div class="step" data-step="analysis"><div class="node">2</div><div class="name">Analysis</div><div class="lat"></div></div>
+          <div class="link" data-link="2"></div>
+          <div class="step" data-step="rag"><div class="node">3</div><div class="name">RAG</div><div class="lat"></div></div>
+          <div class="link" data-link="3"></div>
+          <div class="step" data-step="response"><div class="node">4</div><div class="name">Response</div><div class="lat"></div></div>
+        </div>
+        <div class="pipe-foot" id="pipe-foot">Submit an incident to watch the agents work in real time.</div>
+      </section>
+
+      <!-- Services -->
+      <section class="panel" aria-labelledby="svc-title">
+        <div class="panel-head"><h2 id="svc-title">Deployed services</h2></div>
+        <div class="panel-body">
+          <p class="svc-caption" id="svc-caption">No incident selected.</p>
+          <div class="services" id="services"></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer>API: <code id="footer-api"></code> · <span id="footer-model">model: –</span> · auto-refresh every 10 s</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== Configuration ===================== */
+const API_BASE = (() => {
+  const override = new URLSearchParams(location.search).get("api");
+  if (override) return override.replace(/\/+$/, "");
+  // Served by FastAPI itself (GET / or /dashboard) -> same origin.
+  if (location.protocol.startsWith("http") && /^\/(dashboard)?$/.test(location.pathname)) return location.origin;
+  return "http://localhost:8000";
+})();
+const REFRESH_MS = 10000;
+const POLL_MS = 1000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;   // free-tier rate limits can stretch a run past a minute
+const TERMINAL = new Set(["COMPLETED", "FAILED", "BLOCKED"]);
+const STEPS = ["intake", "analysis", "rag", "response"];
+const SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+
+const SERVICES = {
+  fire:      { icon: "🚒", name: "Fire Department", tag: "FIRE DEPT" },
+  police:    { icon: "🚔", name: "Police", tag: "POLICE" },
+  ambulance: { icon: "🚑", name: "Ambulance", tag: "AMBULANCE" },
+  cyber:     { icon: "🖥️", name: "Cyber Response Team", tag: "CYBER RESPONSE" },
+  medical:   { icon: "🏥", name: "Medical Team", tag: "MEDICAL" },
+};
+// Keyword rules applied to the threat type (fallback: incident category).
+const SERVICE_RULES = [
+  ["fire",      /fire|smoke|explos|hazard|hazmat|chemical|chlorine|toxic|gas\b|gas leak|collapse|earthquake|derail|spill|rescue/],
+  ["police",    /theft|robber|burglar|steal|violen|assault|shoot|gun|terror|hostage|riot|unrest|crowd|missing|vandal|stabbing|kidnap|fraud/],
+  ["ambulance", /medical|injur|casualt|shoot|stabbing|crush|collapse|explos|earthquake|overdose|cardiac|accident|derail|chlorine|toxic|hazmat|hazardous/],
+  ["cyber",     /cyber|ransom|malware|ddos|denial of service|breach|phish|intrusion|hack|scada|\bics\b|supply chain|credential|insider/],
+  ["medical",   /outbreak|epidem|pandemic|health|disease|illness|foodborne|contamina|poison|mass casualty/],
+];
+const CATEGORY_SERVICES = {
+  CYBER_ATTACK: ["cyber"],
+  NATURAL_DISASTER: ["fire", "ambulance"],
+  INFRASTRUCTURE_FAILURE: ["fire"],
+  PUBLIC_SAFETY: ["police", "ambulance"],
+};
+
+/* ===================== State ===================== */
+const state = {
+  incidents: [],
+  total: 0,
+  filter: "ALL",
+  expanded: new Set(),
+  details: new Map(),        // id -> detail JSON
+  loadingDetail: new Set(),
+  online: null,
+  lastUpdated: null,
+  nextRefreshAt: Date.now(),
+  submittedId: null,         // incident currently shown in pipeline/services
+  submitting: false,
+};
+
+/* ===================== Utilities ===================== */
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Parse API timestamps; naive values (e.g. from SQLite) are UTC. */
+function parseDate(value) {
+  if (!value) return null;
+  let s = String(value).replace(" ", "T");
+  if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(s)) s += "Z";
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+function isToday(d) {
+  const now = new Date();
+  return d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+function fmtClock(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }); }
+function timeAgo(d) {
+  const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
+  if (s < 45) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}
+function fmtMs(ms) {
+  if (ms == null || isNaN(ms)) return "–";
+  return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(ms < 10000 ? 1 : 0)}s`;
+}
+function fmtPct(x) { return x == null ? "–" : `${Math.round(x * 100)}%`; }
+function sevClass(sev) { return SEVERITIES.includes(sev) ? sev : "NONE"; }
+
+/** Infer which services to deploy from the threat type (category as fallback). */
+function inferServices(threatType, category) {
+  const text = String(threatType || "").toLowerCase();
+  const found = SERVICE_RULES.filter(([, rx]) => rx.test(text)).map(([key]) => key);
+  if (!found.length && CATEGORY_SERVICES[category]) found.push(...CATEGORY_SERVICES[category]);
+  return [...new Set(found)];
+}
+
+async function api(path, { method = "GET", body, timeout = 10000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal,
+    });
+    let data = null;
+    try { data = await res.json(); } catch { /* empty body */ }
+    return { ok: res.ok, status: res.status, data };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ===================== Header ===================== */
+function tickClock() {
+  const now = new Date();
+  $("#clock-time").textContent = now.toLocaleTimeString([], { hour12: false });
+  $("#clock-date").textContent = now.toLocaleDateString([], { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+  const secs = Math.max(0, Math.ceil((state.nextRefreshAt - Date.now()) / 1000));
+  const updated = state.lastUpdated ? `updated ${fmtClock(state.lastUpdated)}` : "";
+  $("#feed-meta").textContent = state.online === false ? `offline · retry in ${secs}s` : `${updated} · next ${secs}s`;
+}
+
+function setConnection(online, health) {
+  state.online = online;
+  const el = $("#conn");
+  el.classList.toggle("online", online);
+  el.classList.toggle("offline", !online);
+  $("#conn-label").textContent = online ? "ONLINE" : "OFFLINE";
+  $("#offline-banner").classList.toggle("show", !online);
+  if (online && health) {
+    const kb = typeof health.knowledge_base === "object"
+      ? `${health.knowledge_base.incidents} incidents / ${health.knowledge_base.protocols} protocols` : health.knowledge_base;
+    el.title = `Database: ${health.database}\nKnowledge base: ${kb}\nModel: ${health.model}`;
+    $("#footer-model").textContent = `model: ${health.model}`;
+  } else if (!online) {
+    el.title = `No response from ${API_BASE}`;
+  }
+}
+
+/* ===================== Stats ===================== */
+function renderStats() {
+  const today = state.incidents.filter((i) => isToday(parseDate(i.created_at)));
+  const critical = today.filter((i) => i.severity === "CRITICAL");
+  const completed = today.filter((i) => i.status === "COMPLETED");
+  const deployments = completed.reduce((n, i) => n + inferServices(i.threat_type, i.category).length, 0);
+  const latencies = completed.map((i) => i.total_latency_ms).filter((v) => typeof v === "number");
+  const processing = state.incidents.filter((i) => !TERMINAL.has(i.status)).length;
+
+  $("#stat-today").textContent = today.length;
+  $("#stat-today-sub").textContent = processing ? `${processing} processing now` : `${state.total} on record`;
+  const critEl = $("#stat-critical");
+  critEl.textContent = critical.length;
+  critEl.classList.toggle("hot", critical.length > 0);
+  $("#stat-critical-sub").textContent = `today · ${state.incidents.filter((i) => i.severity === "CRITICAL").length} all-time`;
+  $("#stat-deploy").textContent = deployments;
+  $("#stat-latency").textContent = latencies.length ? fmtMs(latencies.reduce((a, b) => a + b, 0) / latencies.length) : "–";
+}
+
+/* ===================== Feed ===================== */
+function renderFeed() {
+  const feed = $("#feed");
+  const items = state.incidents.filter((i) => state.filter === "ALL" || i.severity === state.filter);
+  if (!items.length) {
+    feed.innerHTML = `<div class="empty">${state.incidents.length ? "No incidents match this filter." : "No incidents yet. Submit one using the form."}</div>`;
+    return;
+  }
+  feed.innerHTML = items.map(renderCard).join("");
+}
+
+function renderCard(inc) {
+  const open = state.expanded.has(inc.id);
+  const created = parseDate(inc.created_at);
+  const sev = sevClass(inc.severity);
+  const services = inferServices(inc.threat_type, inc.category);
+  const svcHtml = services.map((k) => `<span class="svc">${esc(SERVICES[k].tag)}</span>`).join("");
+  const category = inc.category ? String(inc.category).replace(/_/g, " ") : "";
+  return `
+  <article class="card sev-${sev}" data-id="${esc(inc.id)}" data-open="${open}">
+    <button class="card-head" type="button" aria-expanded="${open}" aria-controls="d-${esc(inc.id)}">
+      <span class="card-main">
+        <span class="card-title"><span class="sev-dot" aria-hidden="true"></span>${esc(inc.title)}</span>
+        <span class="card-sub">
+          <span class="sev-label">${esc(inc.severity || "UNCLASSIFIED")}</span>
+          <span>${esc(inc.threat_type || (TERMINAL.has(inc.status) ? "Unclassified" : "Analysing…"))}</span>
+          ${category ? `<span>${esc(category)}</span>` : ""}
+          ${inc.location ? `<span>${esc(inc.location)}</span>` : ""}
+        </span>
+      </span>
+      <span class="card-side">
+        <span class="card-time" title="${created ? esc(created.toLocaleString()) : ""}">${created ? `${fmtClock(created)} · ${timeAgo(created)}` : "–"}</span>
+        <span class="status ${esc(inc.status)}">${esc(inc.status)}</span>
+        <span class="chev" aria-hidden="true">+</span>
+      </span>
+      ${svcHtml ? `<span class="card-tags">${svcHtml}</span>` : ""}
+    </button>
+    <div class="card-detail" id="d-${esc(inc.id)}">${open ? renderDetail(inc.id) : ""}</div>
+  </article>`;
+}
+
+function actionList(actions) {
+  if (!actions || !actions.length) return `<p class="muted">None.</p>`;
+  return `<ol class="actions">${actions.map((a) => `
+    <li><span class="prio p${esc(a.priority)}">P${esc(a.priority)}</span>
+      <div>${esc(a.action)}<div class="act-meta">${esc(a.owner)} · ${esc(a.timeframe)}</div></div></li>`).join("")}</ol>`;
+}
+function chipList(values) {
+  return values && values.length ? `<div class="chips">${values.map((v) => `<span>${esc(v)}</span>`).join("")}</div>` : `<p class="muted">None.</p>`;
+}
+
+function renderDetail(id) {
+  const d = state.details.get(id);
+  if (!d) return `<div class="detail-grid"><p class="muted">Loading response strategy…</p></div>`;
+  const rs = d.response_strategy;
+  const runs = (d.agent_runs || []).map((r) => `${esc(r.agent_name)} <b class="mono">${fmtMs(r.latency_ms)}</b>`).join(" · ");
+  const parts = [];
+
+  if (d.error) parts.push(`<div class="err-box">${esc(d.error)}</div>`);
+  if (!rs) {
+    parts.push(`<p class="muted">${TERMINAL.has(d.status) ? "No response strategy was generated." : "Agents are still working on this incident…"}</p>`);
+  } else {
+    parts.push(`
+      <div class="kv">
+        <span>Confidence <b>${fmtPct(d.confidence)}</b></span>
+        <span>Est. resolution <b>${esc(rs.estimated_resolution_time)}</b></span>
+        <span>Pipeline <b class="mono">${fmtMs(d.total_latency_ms)}</b></span>
+        ${d.metrics ? `<span>Tokens <b class="mono">${esc(d.metrics.total_tokens)}</b></span>` : ""}
+      </div>
+      <div class="sec"><h4>Summary</h4><p>${esc(rs.summary)}</p></div>
+      <div class="sec"><h4>Immediate actions (0–4h)</h4>${actionList(rs.immediate_actions)}</div>
+      ${rs.short_term_actions?.length ? `<details class="more sec"><summary>Short-term actions (${rs.short_term_actions.length})</summary>${actionList(rs.short_term_actions)}</details>` : ""}
+      ${rs.long_term_actions?.length ? `<details class="more sec"><summary>Long-term actions (${rs.long_term_actions.length})</summary>${actionList(rs.long_term_actions)}</details>` : ""}
+      <div class="sec"><h4>Stakeholders to notify</h4>${chipList(rs.stakeholders_to_notify)}</div>
+      <div class="sec"><h4>Resources required</h4>${chipList(rs.resources_required)}</div>
+      <div class="sec"><h4>Communication plan</h4><p>${esc(rs.communication_plan)}</p></div>
+      ${rs.risks_and_mitigations?.length ? `<div class="sec"><h4>Risks &amp; mitigations</h4><ul class="plain-list">${rs.risks_and_mitigations.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}
+      <div class="sec"><h4>Grounded in</h4>${chipList(rs.referenced_sources)}</div>`);
+  }
+  if (runs) parts.push(`<div class="kv"><span>Agents: ${runs}</span></div>`);
+  return `<div class="detail-grid">${parts.join("")}</div>`;
+}
+
+async function loadDetail(id, { force = false } = {}) {
+  if (state.loadingDetail.has(id)) return;
+  if (!force && state.details.has(id) && TERMINAL.has(state.details.get(id).status)) return;
+  state.loadingDetail.add(id);
+  try {
+    const r = await api(`/incidents/${encodeURIComponent(id)}`);
+    if (r.ok) state.details.set(id, r.data);
+  } catch { /* offline: keep whatever we had */ }
+  finally {
+    state.loadingDetail.delete(id);
+    const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"] .card-detail`);
+    if (card && state.expanded.has(id)) card.innerHTML = renderDetail(id);
+  }
+}
+
+function toggleCard(id) {
+  const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+  const open = !state.expanded.has(id);
+  open ? state.expanded.add(id) : state.expanded.delete(id);
+  if (card) {
+    card.dataset.open = String(open);
+    card.querySelector(".card-head").setAttribute("aria-expanded", String(open));
+    card.querySelector(".card-detail").innerHTML = open ? renderDetail(id) : "";
+  }
+  if (open) loadDetail(id);
+}
+
+/* ===================== Refresh loop ===================== */
+async function refresh() {
+  state.nextRefreshAt = Date.now() + REFRESH_MS;
+  try {
+    const [list, health] = await Promise.all([
+      api("/incidents?limit=200"),
+      api("/health").catch(() => null),
+    ]);
+    if (!list.ok) throw new Error(`HTTP ${list.status}`);
+    state.incidents = list.data.items || [];
+    state.total = list.data.total ?? state.incidents.length;
+    state.lastUpdated = new Date();
+    setConnection(true, health && health.ok ? health.data : null);
+
+    // Drop cached details whose status changed so expanded cards stay current.
+    for (const inc of state.incidents) {
+      const cached = state.details.get(inc.id);
+      if (cached && cached.status !== inc.status) state.details.delete(inc.id);
+    }
+    renderStats();
+    renderFeed();
+    for (const id of state.expanded) loadDetail(id);
+    if (!state.submittedId) renderServices(state.incidents.find((i) => i.status === "COMPLETED") || null, "Latest incident");
+    incidentMap.sync(state.incidents);
+  } catch {
+    setConnection(false);
+    if (!state.incidents.length) $("#feed").innerHTML = `<div class="empty">Waiting for the API…</div>`;
+  }
+  tickClock();
+}
+
+/* ===================== Pipeline ===================== */
+function resetPipeline() {
+  document.querySelectorAll(".step").forEach((el) => { el.className = "step"; $(".lat", el).textContent = ""; });
+  document.querySelectorAll(".link").forEach((el) => el.classList.remove("done"));
+}
+
+function updatePipeline(detail, elapsedMs) {
+  const runs = Object.fromEntries((detail.agent_runs || []).map((r) => [r.agent_name, r]));
+  const terminal = TERMINAL.has(detail.status);
+  let activeAssigned = false;
+  STEPS.forEach((key, idx) => {
+    const el = document.querySelector(`.step[data-step="${key}"]`);
+    const run = runs[key];
+    let cls = "step";
+    let lat = "";
+    if (run) {
+      cls += run.status === "success" ? " done" : " error";
+      lat = fmtMs(run.latency_ms);
+      el.title = run.error ? run.error : `${run.llm_calls} LLM call(s), ${run.total_tokens} tokens`;
+    } else if (!terminal && !activeAssigned) {
+      cls += " active"; lat = "running"; activeAssigned = true; el.title = "";
+    } else if (terminal) {
+      cls += " skipped"; lat = "skipped"; el.title = "";
+    }
+    el.className = cls;
+    $(".lat", el).textContent = lat;
+    const node = $(".node", el);
+    node.textContent = run ? (run.status === "success" ? "✓" : "✕") : String(idx + 1);
+    const link = document.querySelector(`.link[data-link="${idx}"]`);
+    if (link) link.classList.toggle("done", Boolean(runs[STEPS[idx - 1]] && runs[STEPS[idx - 1]].status === "success"));
+  });
+
+  const total = Object.values(runs).reduce((s, r) => s + (r.latency_ms || 0), 0);
+  const tokens = Object.values(runs).reduce((s, r) => s + (r.total_tokens || 0), 0);
+  $("#pipe-meta").textContent = terminal ? detail.status.toLowerCase() : `running · ${fmtMs(elapsedMs)}`;
+  $("#pipe-foot").innerHTML = `
+    <span>Agent time <b class="mono">${fmtMs(total)}</b></span>
+    <span>Tokens <b class="mono">${tokens}</b></span>
+    <span>Status <b>${esc(detail.status)}</b></span>`;
+}
+
+/* ===================== Services ===================== */
+function renderServices(inc, label) {
+  const active = inc ? new Set(inferServices(inc.threat_type, inc.category)) : new Set();
+  $("#services").innerHTML = Object.entries(SERVICES).map(([key, s]) => {
+    const on = active.has(key);
+    return `<div class="service ${on ? "on" : ""}" aria-label="${esc(s.name)}: ${on ? "deployed" : "standby"}">
+      <span class="icon" aria-hidden="true">${s.icon}</span>
+      <div><div class="sname">${esc(s.name)}</div><div class="state">${on ? "DEPLOYED" : "STANDBY"}</div></div>
+    </div>`;
+  }).join("");
+  $("#svc-caption").innerHTML = inc
+    ? `${esc(label)}: <b>${esc(inc.title)}</b>${inc.threat_type ? ` · ${esc(inc.threat_type)}` : ""}`
+    : "No incident selected.";
+}
+
+/* ===================== Submit ===================== */
+function setBusy(busy) {
+  state.submitting = busy;
+  const btn = $("#submit-btn");
+  btn.disabled = busy;
+  btn.innerHTML = busy ? `<span class="spinner" aria-hidden="true"></span><span>Agents processing…</span>` : `<span>Submit incident</span>`;
+}
+function formError(msg) {
+  const el = $("#form-msg");
+  el.className = "form-msg error";
+  el.textContent = msg;
+}
+function showResult(html, processing = false) {
+  const el = $("#result");
+  el.className = `result show${processing ? " processing" : ""}`;
+  el.innerHTML = html;
+}
+
+async function onSubmit(event) {
+  event.preventDefault();
+  if (state.submitting) return;
+  const report = $("#report").value.trim();
+  const phone = $("#phone").value.trim();
+  const loc = $("#location").value.trim();
+  $("#form-msg").textContent = "";
+
+  if (report.length < 20) return formError("Please describe the incident in at least 20 characters.");
+  if (phone && !/^\+?[0-9\s().-]{7,20}$/.test(phone)) return formError("Enter a valid phone number, e.g. +1 555 010 2030.");
+
+  setBusy(true);
+  resetPipeline();
+  showResult(`<span class="spinner lg" aria-hidden="true"></span><div><b>Submitting…</b><div class="muted">Sending report to the command centre.</div></div>`, true);
+
+  const body = { report, source: "Dashboard" };
+  if (phone) body.reported_by = phone;
+  if (loc) body.location = loc;
+
+  let res;
+  try {
+    res = await api("/incident?run_async=true", { method: "POST", body, timeout: 30000 });
+  } catch {
+    setBusy(false);
+    setConnection(false);
+    showResult(`<div class="err-box">Could not reach the API at ${esc(API_BASE)}. Is the backend running?</div>`);
+    return;
+  }
+
+  if (!res.ok) {
+    setBusy(false);
+    let msg = `Request failed (HTTP ${res.status}).`;
+    if (res.status === 400 && res.data?.matched_rules) {
+      msg = `${res.data.detail} Matched: ${res.data.matched_rules.join(", ")}.`;
+    } else if (res.status === 422 && Array.isArray(res.data?.detail)) {
+      msg = res.data.detail.map((e) => `${(e.loc || []).slice(-1)[0]}: ${e.msg}`).join(" · ");
+    } else if (typeof res.data?.detail === "string") {
+      msg = res.data.detail;
+    }
+    showResult(`<div class="err-box">${esc(msg)}</div>`);
+    return;
+  }
+
+  const id = res.data.id;
+  state.submittedId = id;
+  renderServices(null);
+  $("#svc-caption").textContent = "Waiting for threat analysis…";
+  refresh();
+  await pollIncident(id);
+}
+
+async function pollIncident(id) {
+  const started = Date.now();
+  let detail = null;
+  while (Date.now() - started < POLL_TIMEOUT_MS) {
+    try {
+      const r = await api(`/incidents/${encodeURIComponent(id)}`);
+      if (r.ok) {
+        detail = r.data;
+        const elapsed = Date.now() - started;
+        updatePipeline(detail, elapsed);
+        if (TERMINAL.has(detail.status)) break;
+        const done = (detail.agent_runs || []).length;
+        showResult(`<span class="spinner lg" aria-hidden="true"></span><div><b>Agents processing…</b>
+          <div class="muted">${done}/4 agents complete · ${fmtMs(elapsed)} elapsed</div></div>`, true);
+      }
+    } catch { setConnection(false); }
+    await sleep(POLL_MS);
+  }
+  setBusy(false);
+
+  if (!detail || !TERMINAL.has(detail.status)) {
+    showResult(`<div class="err-box">Still processing after ${POLL_TIMEOUT_MS / 60000} minutes — it will appear in the feed when done.</div>`);
+    return;
+  }
+  state.details.set(id, detail);
+  renderServices(detail, "Your incident");
+  renderResult(detail);
+  incidentMap.track(detail, { priority: true });
+  $("#form").reset();
+  updateCounter();
+  refresh();
+}
+
+function renderResult(d) {
+  const sev = sevClass(d.severity);
+  const rs = d.response_strategy;
+  if (d.status !== "COMPLETED" || !rs) {
+    showResult(`<span class="status ${esc(d.status)}">${esc(d.status)}</span>
+      <div class="err-box" style="margin-top:10px">${esc(d.error || "The agents could not complete this incident.")}</div>`);
+    return;
+  }
+  const top = (rs.immediate_actions || []).slice(0, 3)
+    .map((a) => `<li><b>P${esc(a.priority)}</b> ${esc(a.action)} <span class="muted">— ${esc(a.owner)}</span></li>`).join("");
+  showResult(`
+    <div class="card-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="badge sev-${sev}">${esc(d.severity)}</span>
+      <span class="threat">${esc(d.threat_type)}</span>
+      <span class="muted" style="margin-left:auto;font-size:12px">confidence ${fmtPct(d.confidence)}</span>
+    </div>
+    <h3>${esc(d.title)}</h3>
+    <p class="summary">${esc(rs.summary)}</p>
+    ${top ? `<ul class="plain-list">${top}</ul>` : ""}
+    <p style="margin:10px 0 0"><button class="link-btn" type="button" data-open-id="${esc(d.id)}">View full response strategy →</button></p>`);
+}
+
+function updateCounter() {
+  $("#counter").textContent = `${$("#report").value.length} / 10000`;
+}
+
+/* ===================== Incident map ===================== */
+const MAP_CENTER = [20.5937, 78.9629];   // centre of India
+const MAP_ZOOM = 5;
+const GEOCODE_URL = "https://nominatim.openstreetmap.org/search";
+const GEOCODE_GAP_MS = 1100;             // Nominatim policy: max 1 request per second
+const SEVERITY_COLORS = { CRITICAL: "#ff2020", HIGH: "#ff8000", MEDIUM: "#f0c000", LOW: "#00cc66", NONE: "#555555" };
+const geocodeCache = {};                 // normalised location -> { lat, lon } | null (no result)
+
+/** Leaflet map that plots incidents by geocoding their location text. */
+class IncidentMap {
+  constructor(elementId) {
+    this.el = document.getElementById(elementId);
+    this.markers = new Map();   // incident id -> { marker, key, inc, severity }
+    this.queue = [];            // incident ids waiting to be geocoded (in order)
+    this.pending = new Map();   // incident id -> latest incident data for queued ids
+    this.lastRequestAt = 0;
+    this.working = false;
+    this.map = null;
+    if (!window.L) {
+      this.el.innerHTML = `<div class="map-unavailable">Map unavailable: Leaflet could not be loaded.</div>`;
+      return;
+    }
+    this.map = L.map(this.el, { worldCopyJump: true }).setView(MAP_CENTER, MAP_ZOOM);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      className: "map-tiles",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(this.map);
+    this.updateMeta();
+  }
+
+  static keyFor(location) {
+    return String(location).trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  /** Reconcile markers with the current incident list (called on every refresh). */
+  sync(incidents) {
+    if (!this.map) return;
+    const ids = new Set(incidents.map((i) => i.id));
+    let changed = false;
+    for (const [id, entry] of this.markers) {
+      if (!ids.has(id)) { entry.marker.remove(); this.markers.delete(id); changed = true; }
+    }
+    for (const inc of incidents) changed = this.track(inc) || changed;
+    if (changed) this.fit();
+    this.updateMeta();
+  }
+
+  /** Add/update one incident; returns true if a marker was added synchronously (cache hit). */
+  track(inc, { priority = false } = {}) {
+    if (!this.map || !inc || !inc.location) return false;
+    const key = IncidentMap.keyFor(inc.location);
+    const existing = this.markers.get(inc.id);
+    if (existing && existing.key === key) { this.restyle(existing, inc); return false; }
+    if (existing) { existing.marker.remove(); this.markers.delete(inc.id); }
+
+    if (key in geocodeCache) {
+      if (!geocodeCache[key]) return Boolean(existing);   // known "no result": skip silently
+      this.addMarker(inc, key, geocodeCache[key]);
+      if (priority) this.fit();
+      return true;
+    }
+    const alreadyQueued = this.pending.has(inc.id);
+    this.pending.set(inc.id, inc);
+    if (!alreadyQueued) priority ? this.queue.unshift(inc.id) : this.queue.push(inc.id);
+    else if (priority) { this.queue = [inc.id, ...this.queue.filter((id) => id !== inc.id)]; }
+    this.pump();
+    return Boolean(existing);
+  }
+
+  /** Single worker draining the geocode queue at <= 1 request / 1100 ms. */
+  async pump() {
+    if (this.working) return;
+    this.working = true;
+    try {
+      while (this.queue.length) {
+        const id = this.queue.shift();
+        const inc = this.pending.get(id);
+        this.pending.delete(id);
+        if (!inc || this.markers.has(id)) continue;
+        const key = IncidentMap.keyFor(inc.location);
+        if (!(key in geocodeCache)) {
+          const wait = this.lastRequestAt + GEOCODE_GAP_MS - Date.now();
+          if (wait > 0) await sleep(wait);
+          this.lastRequestAt = Date.now();
+          try {
+            geocodeCache[key] = await this.geocode(inc.location);
+          } catch {
+            this.updateMeta();
+            continue;   // network/HTTP error: skip silently, retried on a later refresh
+          }
+        }
+        if (geocodeCache[key]) { this.addMarker(inc, key, geocodeCache[key]); this.fit(); }
+        this.updateMeta();
+      }
+    } finally {
+      this.working = false;
+      this.updateMeta();
+    }
+  }
+
+  /** Look up a location with Nominatim; resolves to {lat, lon} or null when there is no match. */
+  async geocode(location) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    try {
+      const url = `${GEOCODE_URL}?q=${encodeURIComponent(location)}&format=json&limit=1`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": "CrisisCommandCentre/1.0", Accept: "application/json" },
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const hit = Array.isArray(data) ? data[0] : null;
+      const lat = hit ? parseFloat(hit.lat) : NaN;
+      const lon = hit ? parseFloat(hit.lon) : NaN;
+      return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  addMarker(inc, key, pos) {
+    const severity = sevClass(inc.severity);
+    const color = SEVERITY_COLORS[severity];
+    const entry = { key, inc, severity, marker: null };
+    entry.marker = L.circleMarker([pos.lat, pos.lon], {
+      radius: 8, fillOpacity: 0.85, weight: 1, color, fillColor: color, className: `map-marker sev-${severity}`,
+    }).bindPopup(() => this.popupHtml(entry.inc), { maxWidth: 280 }).addTo(this.map);
+    this.markers.set(inc.id, entry);
+  }
+
+  /** Keep marker colour/popup in sync as an incident moves from PROCESSING to classified. */
+  restyle(entry, inc) {
+    entry.inc = inc;
+    const severity = sevClass(inc.severity);
+    if (severity !== entry.severity) {
+      const color = SEVERITY_COLORS[severity];
+      entry.marker.setStyle({ color, fillColor: color });
+      const el = entry.marker.getElement();
+      if (el) { el.classList.remove(`sev-${entry.severity}`); el.classList.add(`sev-${severity}`); }
+      entry.severity = severity;
+    }
+    if (entry.marker.isPopupOpen()) entry.marker.getPopup().setContent(this.popupHtml(inc));
+  }
+
+  popupHtml(inc) {
+    const sev = sevClass(inc.severity);
+    const services = inferServices(inc.threat_type, inc.category);
+    return `<div class="map-popup">
+      <div class="map-popup-title">${esc(inc.title)}</div>
+      <div class="card-row">
+        <span class="badge sev-${sev}">${esc(inc.severity || "UNCLASSIFIED")}</span>
+        <span class="threat">${esc(inc.threat_type || "Unclassified")}</span>
+      </div>
+      <div class="map-popup-loc">${esc(inc.location)}</div>
+      ${services.length ? `<div class="map-popup-tags">${services.map((k) => `<span class="svc">${esc(SERVICES[k].tag)}</span>`).join("")}</div>` : ""}
+    </div>`;
+  }
+
+  /** Fit all markers (>= 2) or centre on a single marker at zoom 12. */
+  fit() {
+    const layers = [...this.markers.values()].map((e) => e.marker);
+    if (layers.length >= 2) this.map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [40, 40], maxZoom: 12 });
+    else if (layers.length === 1) this.map.setView(layers[0].getLatLng(), 12);
+  }
+
+  updateMeta() {
+    const locating = this.queue.length + (this.working ? 1 : 0);
+    $("#map-meta").textContent = `${this.markers.size} plotted${locating ? ` · locating ${locating}` : ""}`;
+  }
+}
+
+const incidentMap = new IncidentMap("incident-map");
+
+/* ===================== Wiring ===================== */
+$("#api-url").textContent = API_BASE;
+$("#footer-api").textContent = API_BASE;
+$("#form").addEventListener("submit", onSubmit);
+$("#report").addEventListener("input", updateCounter);
+
+$("#feed").addEventListener("click", (e) => {
+  const head = e.target.closest(".card-head");
+  if (head) toggleCard(head.closest(".card").dataset.id);
+});
+document.querySelector(".filters").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-filter]");
+  if (!btn) return;
+  state.filter = btn.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+  renderFeed();
+});
+$("#result").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-open-id]");
+  if (!btn) return;
+  const id = btn.dataset.openId;
+  state.filter = "ALL";
+  document.querySelectorAll("[data-filter]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === "ALL")));
+  renderFeed();
+  if (!state.expanded.has(id)) toggleCard(id);
+  document.querySelector(`.card[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+renderServices(null);
+tickClock();
+setInterval(tickClock, 1000);
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>

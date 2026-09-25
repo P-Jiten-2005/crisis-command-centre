@@ -127,8 +127,18 @@ class CrisisWorkflow:
             raw_report = incident.raw_report
             memory = self._load_memory(session, exclude_id=incident_id)
 
+        state: CrisisState | None = None
+        recorded = 0
         try:
-            state = self.coordinator.run(raw_report, submission, incident_id, memory)
+            # Stream node-by-node so each agent's metrics are stored as soon as it finishes;
+            # clients polling GET /incidents/{id} see the pipeline progress live.
+            for state in self.coordinator.stream(raw_report, submission, incident_id, memory):
+                metrics = state.get("metrics") or []
+                if len(metrics) > recorded:
+                    self._record_agent_runs(incident_id, metrics[recorded:])
+                    recorded = len(metrics)
+            if state is None:
+                raise RuntimeError("workflow produced no state")
         except Exception as exc:  # noqa: BLE001 - persist failure instead of losing the incident
             logger.exception("Workflow crashed for incident %s", incident_id)
             with self.database.session_scope() as session:
@@ -180,7 +190,7 @@ class CrisisWorkflow:
 
     @staticmethod
     def _persist_state(incident: Incident, state: CrisisState) -> None:
-        """Copy the final graph state onto the ORM incident and add agent run records.
+        """Copy the final graph state onto the ORM incident (agent runs are stored while streaming).
 
         Args:
             incident: ORM incident to update.
@@ -217,24 +227,35 @@ class CrisisWorkflow:
         }.get(status, IncidentStatus.FAILED).value
         errors = state.get("errors") or []
         incident.error = "; ".join(errors) if errors else None
-
-        for raw in state.get("metrics", []):
-            m = AgentMetrics.model_validate(raw)
-            incident.agent_runs.append(
-                AgentRun(
-                    agent_name=m.agent,
-                    status=m.status,
-                    latency_ms=m.latency_ms,
-                    llm_calls=m.llm_calls,
-                    input_tokens=m.input_tokens,
-                    output_tokens=m.output_tokens,
-                    total_tokens=m.total_tokens,
-                    confidence=m.confidence,
-                    tool_calls=m.tool_calls,
-                    error=m.error,
-                )
-            )
         logger.info("Incident %s stored with status %s", incident.id, incident.status)
+
+    def _record_agent_runs(self, incident_id: str, metrics: list[dict[str, Any]]) -> None:
+        """Persist per-agent metrics as soon as the agents finish (live progress).
+
+        Args:
+            incident_id: Incident being processed.
+            metrics: New ``AgentMetrics`` JSON entries to store.
+        """
+        with self.database.session_scope() as session:
+            incident = session.get(Incident, incident_id)
+            if incident is None:
+                return
+            for raw in metrics:
+                m = AgentMetrics.model_validate(raw)
+                incident.agent_runs.append(
+                    AgentRun(
+                        agent_name=m.agent,
+                        status=m.status,
+                        latency_ms=m.latency_ms,
+                        llm_calls=m.llm_calls,
+                        input_tokens=m.input_tokens,
+                        output_tokens=m.output_tokens,
+                        total_tokens=m.total_tokens,
+                        confidence=m.confidence,
+                        tool_calls=m.tool_calls,
+                        error=m.error,
+                    )
+                )
 
     @staticmethod
     def _provisional_title(report: str) -> str:
